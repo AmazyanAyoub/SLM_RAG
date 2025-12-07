@@ -1,0 +1,10 @@
+# Python dependencies
+fastapi
+uvicorn
+langchain
+langgraph
+chromadb
+sentence-transformers   # if you use BGE/GTE via HF
+python-dotenv
+pydantic
+streamlit

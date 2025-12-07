@@ -1,0 +1,1 @@
+# BGE/GTE embedding client

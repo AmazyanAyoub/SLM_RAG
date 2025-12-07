@@ -1,0 +1,50 @@
+# configs/base.yaml
+
+project:
+  name: "SLM_RAG"
+  description: "RAG system with Groq 8B student, 70B teacher, BGE/GTE embeddings and Chroma."
+
+llm:
+  student:
+    provider: "ollama"
+    model_name: "llama-3.1"
+    temperature: 0.2
+    top_p: 0.9
+    max_tokens: 1024
+
+  teacher:
+    provider: "groq"
+    model_name: "llama-3.3-70b-versatile"
+    temperature: 0.2
+    top_p: 0.9
+    max_tokens: 2048
+
+retrieval:
+  embedder:
+    provider: "huggingface"
+    # default embedding model
+    model_name: "bge-large"
+    # optional alternative: "gte-large"
+    allowed_models:
+      - "bge-large"
+      - "gte-large"
+  vector_store:
+    type: "chroma"
+    persist_directory: "data/indices/chroma"
+  chunking:
+    chunk_size: 1024
+    chunk_overlap: 256
+
+orchestration:
+  engine: "langgraph"
+  llm_framework: "langchain"
+
+frontend:
+  type: "streamlit"
+  host: "0.0.0.0"
+  port: 8501
+
+server:
+  backend_host: "0.0.0.0"
+  backend_port: 8000
+  log_level: "info"

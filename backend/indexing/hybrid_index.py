@@ -1,0 +1,1 @@
+# Hybrid index (dense + sparse)
