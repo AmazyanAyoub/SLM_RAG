@@ -1,3 +1,4 @@
+# 2025 RAG Documentation
 # SLM RAG project README - Project Overview
 
 ## 1. Purpose
@@ -77,4 +78,3 @@ The final user-facing interface is a **Streamlit app** that lets users upload do
 - **Admin / Distillation Controls**: run teacher RAG, build datasets, trigger student fine-tuning (later).
 
 ---
-

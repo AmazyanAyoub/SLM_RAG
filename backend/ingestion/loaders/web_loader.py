@@ -1,1 +1,1 @@
-# Web page loader
+# Firecrawl / Beautiful Soup loader

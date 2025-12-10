@@ -1,1 +1,1 @@
-# Shared state definition
+# GraphState (query, docs, attempts, hallu_score)

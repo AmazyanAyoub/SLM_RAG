@@ -1,1 +1,1 @@
-# Community detection
+# Leiden algorithm for clustering

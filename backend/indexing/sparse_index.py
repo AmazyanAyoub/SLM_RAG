@@ -1,1 +1,1 @@
-# Sparse/BM25 index setup
+# Splade / BM25 fallback (optional)

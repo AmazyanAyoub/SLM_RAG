@@ -1,1 +1,1 @@
-# Dependency wiring (DB, clients, etc.)
+# Dependency injection (DB, Clients)

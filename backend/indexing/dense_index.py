@@ -1,1 +1,1 @@
-# Dense index setup
+# BGE-M3 embedding logic

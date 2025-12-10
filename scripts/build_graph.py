@@ -1,1 +1,1 @@
-# Script: build knowledge graph
+# CLI to build GraphRAG

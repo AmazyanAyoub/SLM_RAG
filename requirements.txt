@@ -8,3 +8,5 @@ sentence-transformers   # if you use BGE/GTE via HF
 python-dotenv
 pydantic
 streamlit
+pdfplumber
+PdfReader

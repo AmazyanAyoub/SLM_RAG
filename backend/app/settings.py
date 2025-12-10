@@ -1,1 +1,1 @@
-# Settings and configuration
+# Pydantic settings management

@@ -1,1 +1,1 @@
-# Logging configuration
+# Structured logging setup

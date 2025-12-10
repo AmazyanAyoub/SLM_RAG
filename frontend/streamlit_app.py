@@ -1,1 +1,1 @@
-# Main Streamlit entry point
+# Main UI entry point
