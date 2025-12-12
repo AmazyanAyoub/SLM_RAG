@@ -1,12 +1,30 @@
-# Python dependencies
+# Core RAG & Logic
+langchain>=0.3.0
+langgraph>=0.2.0
+langchain-community
+langchain-ollama
+langchain-groq
+
+# Vector Database
+qdrant-client
+
+# Retrieval & Reranking (The 2025 Upgrade)
+ragatouille  # For ColBERTv2 (Phase 1)
+sentence-transformers
+pymupdf      # Fast PDF loading
+
+# Memory (Phase 2)
+mem0ai       # The specific library for User Memory
+
+# Backend & API
 fastapi
 uvicorn
-langchain
-langgraph
-chromadb
-sentence-transformers   # if you use BGE/GTE via HF
+pydantic-settings
 python-dotenv
-pydantic
+
+# GraphRAG (Phase 4 - Start simple)
+networkx
+cdlib        # For community detection (Leiden algorithm)
+
+# Frontend
 streamlit
-pdfplumber
-PdfReader
