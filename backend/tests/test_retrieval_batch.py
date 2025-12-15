@@ -1,9 +1,14 @@
 import os
 import json
 import time
+import sys
 from datetime import datetime
 
+# Add project root to sys.path
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../../")))
+
 from backend.indexing.dense_index import DenseIndexer
+from backend.indexing.sparse_index import SparseIndexer # <--- NEW
 from backend.indexing.vector_store import VectorDBClient
 
 # ==========================================
@@ -23,13 +28,15 @@ TEST_QUESTIONS = [
 ]
 
 def run_batch_test():
-    print("🧪 STARTING BATCH RETRIEVAL TEST (10 Questions)")
-    print("=" * 60)
+    print("🧪 STARTING HYBRID RETRIEVAL TEST (10 Questions)")
+    print("============================================================")
 
-    # 1. Initialize System
+    # 1. Initialize System (Both Indexers)
     try:
-        indexer = DenseIndexer()
+        dense_indexer = DenseIndexer()
+        sparse_indexer = SparseIndexer()
         client = VectorDBClient()
+        print("✅ Hybrid System Initialized.")
     except Exception as e:
         print(f"❌ System Init Failed: {e}")
         return
@@ -42,21 +49,33 @@ def run_batch_test():
     start_time = time.time()
     
     for i, question in enumerate(TEST_QUESTIONS):
-        print(f"🔍 [{i+1}/10] Querying: {question}...", end="\r")
+        print(f"🔍 [{i+1}/10] Querying: {question[:50]}...", end="\r")
         
-        # Embed
-        query_vector = indexer.embed_texts([question])[0]
+        # A. Generate Dense Vector (Meaning)
+        query_dense = dense_indexer.embed_texts([question])[0]
         
-        # Search (Get top 5)
-        search_hits = client.search(query_vector, limit=5)
+        # B. Generate Sparse Vector (Keywords)
+        # Note: sparse_indexer returns a list of dicts, we need the first one
+        query_sparse_output = sparse_indexer.compute_sparse_vectors([question])[0]
+        query_sparse_indices = [int(k) for k in query_sparse_output.keys()]
+        query_sparse_values = [float(v) for v in query_sparse_output.values()]
+        
+        # C. Hybrid Search (Dense + Sparse)
+        search_hits = client.search(
+            query_dense=query_dense,
+            query_sparse_indices=query_sparse_indices,
+            query_sparse_values=query_sparse_values,
+            limit=5
+        )
         
         # Format Hits for JSON
         hits_data = []
         for hit in search_hits:
             hits_data.append({
-                "score": float(hit.score), # Convert to float for JSON
+                "score": float(hit.score), # This is now an RRF Score (Fusion), not just Cosine
                 "source": hit.payload.get("source", "Unknown"),
-                "text_preview": hit.payload.get("text", "")[:300], # First 300 chars
+                "text_preview": hit.payload.get("text", ""), # First 300 chars
+                "search_content": hit.payload.get("context_summary", ""), # The Smart Context
                 "chunk_index": hit.payload.get("chunk_index")
             })
             
@@ -79,13 +98,13 @@ def run_batch_test():
     os.makedirs(output_dir, exist_ok=True)
     
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    filename = f"{output_dir}/retrieval_benchmark_{timestamp}.json"
+    filename = f"{output_dir}/hybrid_retrieval_benchmark_{timestamp}.json"
     
     with open(filename, "w", encoding="utf-8") as f:
         json.dump({
             "meta": {
                 "timestamp": timestamp,
-                "model": "BGE-M3",
+                "mode": "Hybrid (Dense + Sparse)",
                 "avg_score": total_score / total_retrieved if total_retrieved else 0
             },
             "results": results_log
@@ -94,15 +113,10 @@ def run_batch_test():
     print(f"📂 Results saved to: {filename}")
     
     # 4. Print Summary
-    avg = total_score / total_retrieved if total_retrieved else 0
     print("-" * 60)
-    print(f"📊 Global Average Similarity Score: {avg:.4f}")
-    if avg > 0.6:
-        print("🟢 System Health: EXCELLENT (Strong matches found)")
-    elif avg > 0.4:
-        print("🟡 System Health: GOOD (Relevant content likely found)")
-    else:
-        print("🔴 System Health: WEAK (Check chunking or embeddings)")
+    print("📊 HYBRID SEARCH SUMMARY")
+    print("Note: Scores are now RRF (Rank Fusion), so they might look lower/different than raw Cosine.")
+    print("Check the JSON file to see if the retrieved text actually answers the question!")
     print("-" * 60)
 
 if __name__ == "__main__":

@@ -12,7 +12,7 @@ from langchain_ollama import ChatOllama
 # TEACHER_MODEL_ID = "llama-3.1-8b-instant"
 
 REMOTE_OLLAMA_URL = "http://18.132.143.112:14528"
-CONTEXT_MODEL = "qwen3:8b"  # Make sure this tag exists on your server
+CONTEXT_MODEL = "qwen3:4b-instruct-2507-fp16"  # Make sure this tag exists on your server
 
 
 class ContextualEnricher:
@@ -63,13 +63,13 @@ class ContextualEnricher:
         
         self.chain = self.prompt | self.llm | StrOutputParser()
 
-    def clean_response(self, text: str) -> str:
-        """Removes <think> tags if the model outputs them."""
-        # Remove <think>...</think> content
-        cleaned = re.sub(r"<think>.*?</think>", "", text, flags=re.DOTALL)
-        # Remove any leading "Context:" labels if the model adds them redundantly
-        cleaned = cleaned.replace("Context:", "").strip()
-        return cleaned
+    # def clean_response(self, text: str) -> str:
+    #     """Removes <think> tags if the model outputs them."""
+    #     # Remove <think>...</think> content
+    #     cleaned = re.sub(r"<think>.*?</think>", "", text, flags=re.DOTALL)
+    #     # Remove any leading "Context:" labels if the model adds them redundantly
+    #     cleaned = cleaned.replace("Context:", "").strip()
+    #     return cleaned
 
     async def enrich_chunk(self, chunk_content: str, full_document_content: str) -> str:
         """
@@ -86,10 +86,10 @@ class ContextualEnricher:
             })
             
             # Combine Context + Original Content
-            clean_context = self.clean_response(raw_context)
+            # clean_context = self.clean_response(raw_context)
 
             # This is what gets EMBEDDED, but the LLM sees only the original chunk usually
-            enriched_text = f"Context: {clean_context}\n\nContent: {chunk_content}"
+            enriched_text = f"Context: {raw_context}\n\nContent: {chunk_content}"
             return enriched_text
 
         except Exception as e:

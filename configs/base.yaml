@@ -55,7 +55,7 @@ retrieval:
     type: "qdrant"
     host: "localhost"
     port: 6333
-    collection: "slm_rag_contextual" # Renamed to indicate contextual data
+    collection: "slm_rag_contextual_V1" # Renamed to indicate contextual data
     api_key: "${QDRANT_API_KEY}" # Use env var placeholder
 
   # NEW: Phase 2 - User Memory

@@ -9,13 +9,16 @@ from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.output_parsers import StrOutputParser
 
 from backend.indexing.dense_index import DenseIndexer
+from backend.indexing.sparse_index import SparseIndexer # <--- NEW IMPORT
 from backend.indexing.vector_store import VectorDBClient
 
 # ==========================================
 # ⚙️ CONFIGURATION
 # ==========================================
 OLLAMA_BASE_URL = "http://18.132.143.112:14528"
+# MODEL_NAME = "qwen3:4b-instruct-2507-fp16" 
 MODEL_NAME = "qwen3:8b" 
+
 
 # The 10 Specific Benchmark Questions
 TEST_QUESTIONS = [
@@ -40,21 +43,24 @@ def clean_reasoning(text: str) -> str:
     return cleaned.strip()
 
 def run_benchmark():
-    print(f"\n🧪 STARTING BENCHMARK (Model: {MODEL_NAME})")
+    print(f"\n🧪 STARTING HYBRID BENCHMARK (Model: {MODEL_NAME})")
     print(f"📊 Total Questions: {len(TEST_QUESTIONS)}")
-    print("=" * 60)
+    print("============================================================")
 
     # 1. SETUP (Run Once)
-    print("⚙️ Initializing RAG components...")
+    print("⚙️ Initializing Hybrid RAG components...")
     try:
-        indexer = DenseIndexer()
+        dense_indexer = DenseIndexer()
+        sparse_indexer = SparseIndexer() # <--- NEW
         client = VectorDBClient()
+        
         llm = ChatOllama(
             model=MODEL_NAME,
             base_url=OLLAMA_BASE_URL,
             temperature=0.1,
             keep_alive="5m"
         )
+        print("✅ Components Ready.")
     except Exception as e:
         print(f"❌ Init Failed: {e}")
         return
@@ -85,14 +91,29 @@ def run_benchmark():
         print(f"\n🔍 Processing [{i+1}/{len(TEST_QUESTIONS)}]: {question[:50]}...")
         q_start = time.time()
         
-        # A. RETRIEVE
-        query_vector = indexer.embed_texts([question])[0]
-        search_hits = client.search(query_vector, limit=3)
+        # A. HYBRID RETRIEVE
+        # 1. Dense Vector
+        query_dense = dense_indexer.embed_texts([question])[0]
+        
+        # 2. Sparse Vector
+        sparse_output = sparse_indexer.compute_sparse_vectors([question])[0]
+        query_indices = [int(k) for k in sparse_output.keys()]
+        query_values = [float(v) for v in sparse_output.values()]
+        
+        # 3. Hybrid Search
+        search_hits = client.search(
+            query_dense=query_dense,
+            query_sparse_indices=query_indices,
+            query_sparse_values=query_values,
+            limit=3
+        )
         
         context_text = ""
         sources = []
         for hit in search_hits:
             text = hit.payload.get("text", "")
+            # Use 'search_content' (summary) if available for better context context
+            # smart_context = hit.payload.get("search_content", text) 
             src = hit.payload.get("source", "Unknown")
             sources.append(src)
             context_text += f"\n---\nSource: {src}\n{text}\n"
@@ -117,9 +138,9 @@ def run_benchmark():
             "id": i + 1,
             "question": question,
             "cleaned_answer": final_answer,
-            "raw_response_snippet": raw_response[:200] + "...", # Save space
-            "sources": list(set(sources)), # Unique sources
-            "retrieval_score_top1": search_hits[0].score if search_hits else 0,
+            "raw_response_snippet": raw_response[:200] + "...",
+            "sources": list(set(sources)),
+            "retrieval_score_top1": search_hits[0].score if search_hits else 0, # RRF Score
             "time_taken": round(time.time() - q_start, 2)
         })
 
@@ -127,12 +148,13 @@ def run_benchmark():
     total_time = time.time() - start_total
     print("\n" + "=" * 60)
     
-    output_file = LOG_DIR / f"benchmark_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json"
+    output_file = LOG_DIR / f"hybrid_benchmark_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json"
     
     final_report = {
         "meta": {
             "timestamp": datetime.now().isoformat(),
             "model_name": MODEL_NAME,
+            "mode": "Hybrid (Dense + Sparse)",
             "total_questions": len(TEST_QUESTIONS),
             "total_time_seconds": round(total_time, 2)
         },

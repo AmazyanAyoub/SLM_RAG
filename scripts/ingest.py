@@ -1,4 +1,3 @@
-# CLI to run ingestion
 import os
 import sys
 import asyncio
@@ -6,44 +5,47 @@ from pathlib import Path
 from dotenv import load_dotenv
 
 # Add project root to sys.path
-# sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../../")))
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../../")))
 
 from backend.ingestion.loaders.pdf_loader import PDFLoader
 from backend.ingestion.pipeline.chunking import Chunker
 from backend.ingestion.pipeline.contextual_enrichment import ContextualEnricher
 from backend.indexing.dense_index import DenseIndexer
+from backend.indexing.sparse_index import SparseIndexer
 
 # Load Environment Variables
 load_dotenv()
 
 async def main():
     print("🚀 STARTING INGESTION PIPELINE (2025 Architecture)")
-    print("=" * 60)
+    print("============================================================")
 
     # 1. SETUP
-    data_dir = Path("data/pdfs")
+    data_dir = Path("data/pdfs") # Ensure this matches your folder name (data/pdfs or data/raw)
     if not data_dir.exists():
         print(f"❌ Error: Directory '{data_dir}' not found.")
         return
 
     pdf_files = list(data_dir.glob("*.pdf"))
     if not pdf_files:
-        print("⚠️ No PDFs found. Please add files to 'data/pdfs'.")
+        print(f"⚠️ No PDFs found in {data_dir}. Please add files.")
         return
 
     # Initialize Components
     loader = PDFLoader()
     chunker = Chunker(chunk_size=512, chunk_overlap=100)
     
-    # Only init Enricher if we have a key
-    if os.getenv("OLLAMA_BASE_URL"):
+    # Initialize Enricher
+    try:
         enricher = ContextualEnricher()
-        print("✅ Teacher LLM (qwen3:8b) Connected for Enrichment.")
-    else:
+        print("✅ Teacher LLM Connected for Enrichment.")
+    except Exception as e:
         enricher = None
-        print("⚠️ No GROQ_API_KEY found. Skipping Contextual Enrichment.")
+        print(f"⚠️ Contextual Enricher skipped: {e}")
 
-    indexer = DenseIndexer() # Loads BGE-M3 (Takes memory!)
+    # Initialize BOTH Indexers
+    dense_indexer = DenseIndexer()   # Creates the Point
+    sparse_indexer = SparseIndexer() # Adds Keywords to the Point
 
     # 2. PROCESS FILES
     for pdf_file in pdf_files:
@@ -51,56 +53,81 @@ async def main():
         
         # A. LOAD
         try:
-            raw_text = loader.load_file(str(pdf_file))
+            raw_text = loader.load_file(pdf_file)
+            if not raw_text:
+                print("   ⚠️ Loader returned empty text.")
+                continue
         except Exception as e:
             print(f"   ❌ Failed to load: {e}")
             continue
 
         # B. CHUNK
+        # Pass filename as metadata "source" to avoid 'unknown' duplicates
         chunks = chunker.chunk_text(raw_text, metadata={"source": pdf_file.name})
         print(f"   ✂️ Generated {len(chunks)} chunks.")
 
-        # C. ENRICH (Phase 1.5)
-        # enricher = None
+        # C. ENRICH (SOTA Neighbor Window)
         if enricher:
-            print("   👨‍🏫 Enriching chunks (This may take a mom" \
-            "ent)...")
-            # We process in batches of 10 to avoid hitting API rate limits
-            batch_size = 10
-            for i in range(0, len(chunks), batch_size):
-                batch = chunks[i : i + batch_size]
+            print("   👨‍🏫 Enriching chunks (using Neighbor Window strategy)...")
+            
+            tasks = []
+            window_size = 3  # How many chunks before/after to include
+            
+            for i, chunk in enumerate(chunks):
+                # Calculate window indices
+                start_i = max(0, i - window_size)
+                end_i = min(len(chunks), i + window_size + 1)
                 
-                # Create async tasks for the batch
-                tasks = [
-                    enricher.enrich_chunk(chunk["text"], raw_text) 
-                    for chunk in batch
-                ]
+                # Join the text of the neighbors to form the context
+                neighbor_text = "\n---\n".join([c["text"] for c in chunks[start_i:end_i]])
                 
-                # Run batch in parallel
-                enriched_texts = await asyncio.gather(*tasks)
+                # Add task
+                tasks.append(enricher.enrich_chunk(chunk["text"], neighbor_text))
+
+            # Run Batches
+            batch_size = 10 
+            for i in range(0, len(tasks), batch_size):
+                batch_tasks = tasks[i : i + batch_size]
+                batch_chunks = chunks[i : i + batch_size]
                 
-                # Update the chunks with the new enriched text
+                # Run parallel
+                enriched_texts = await asyncio.gather(*batch_tasks)
+                
+                # Save results
                 for j, result_text in enumerate(enriched_texts):
-                    batch[j]["search_content"] = result_text      # FOR SEARCH
-                    batch[j]["display_content"] = batch[j]["text"] # FOR DISPLAY
+                    batch_chunks[j]["search_content"] = result_text
+                    batch_chunks[j]["display_content"] = batch_chunks[j]["text"]
                 
                 print(f"      Processed {min(i + batch_size, len(chunks))}/{len(chunks)} chunks...", end="\r")
-
-                await asyncio.sleep(1)
+            
             print("\n   ✅ Enrichment Complete.")
         else:
-            # Fallback if no API key
+            # Fallback
             for c in chunks:
                 c["search_content"] = c["text"]
                 c["display_content"] = c["text"]
 
-        # D. INDEX
-        print("   🧠 Embedding and Indexing to Qdrant...")
-        try:
-            indexer.index_chunks(chunks)
-            print("   ✅ File Indexed Successfully!")
-        except Exception as e:
-            print(f"   ❌ Indexing Failed: {e}")
+        # D. INDEXING (Hybrid)
+        if chunks:
+            # Step 1: Dense Vectors (Upsert - Creates the Point)
+            # This MUST run first to create the point ID
+            print("   🧠 Step 1: Generating Dense Vectors...")
+            try:
+                dense_indexer.index_chunks(chunks)
+            except Exception as e:
+                print(f"   ❌ Dense Indexing Failed: {e}")
+                continue
+
+            # Step 2: Sparse Vectors (Update - Adds to the Point)
+            # This adds the keyword data to the existing point
+            print("   🧠 Step 2: Generating Sparse Vectors...")
+            try:
+                sparse_indexer.index_chunks(chunks)
+            except Exception as e:
+                print(f"   ❌ Sparse Indexing Failed: {e}")
+                continue
+            
+            print(f"   ✅ File '{pdf_file.name}' Fully Indexed (Hybrid)!")
 
     print("\n" + "=" * 60)
     print("🎉 INGESTION COMPLETE!")

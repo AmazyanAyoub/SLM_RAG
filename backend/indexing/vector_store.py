@@ -34,15 +34,18 @@ class VectorDBClient:
             
             self.client.create_collection(
                 collection_name=self.collection_name,
-                vectors_config=models.VectorParams(
-                    size=self.vector_size,
-                    distance=models.Distance.COSINE
-                ),
-                # Enable sparse vectors for Hybrid Search (BM25 equivalent)
+                # FIX 1: Explicitly name the dense vector "dense"
+                vectors_config={
+                    "dense": models.VectorParams(
+                        size=self.vector_size,
+                        distance=models.Distance.COSINE
+                    )
+                },
+                # FIX 2: Rename sparse vector to "sparse" to match search logic
                 sparse_vectors_config={
-                    "text-sparse": models.SparseVectorParams(
+                    "sparse": models.SparseVectorParams(
                         index=models.SparseIndexParams(
-                            on_disk=True, # Save RAM
+                            on_disk=True, # Save RAM, good choice
                         )
                     )
                 }
@@ -60,30 +63,31 @@ class VectorDBClient:
             points=points
         )
 
-    # def search(self, query_vector: list, limit: int = 5):
-    #     """
-    #     Standard Dense Search
-    #     """
-    #     return self.client.search(
-    #         collection_name=self.collection_name,
-    #         query_vector=query_vector,
-    #         limit=limit
-    #     )
-
-    def search(self, query_vector: list, limit: int = 5):
-            """
-            SOTA Search using the new Query API (v1.10+)
-            """
-            # "query_points" is the modern replacement for "search"
-            results = self.client.query_points(
-                collection_name=self.collection_name,
-                query=query_vector,
-                limit=limit,
-                with_payload=True,
-                with_vectors=False
-            )
-            # The new API returns an object with a .points attribute
-            return results.points
+    def search(self, query_dense: list, query_sparse_indices: list, query_sparse_values: list, limit: int = 5):
+        """
+        Performs Hybrid Search (Dense + Sparse) with RRF Fusion.
+        """
+        return self.client.query_points(
+            collection_name=self.collection_name,
+            prefetch=[
+                models.Prefetch(
+                    query=query_dense,
+                    using="dense", # Now this matches FIX 1
+                    limit=limit * 2, 
+                ),
+                models.Prefetch(
+                    query=models.SparseVector(
+                        indices=query_sparse_indices,
+                        values=query_sparse_values
+                    ),
+                    using="sparse", # Now this matches FIX 2
+                    limit=limit * 2,
+                ),
+            ],
+            query=models.FusionQuery(fusion=models.Fusion.RRF), # Reciprocal Rank Fusion
+            limit=limit,
+            with_payload=True
+        ).points
 
 # Simple test block
 if __name__ == "__main__":

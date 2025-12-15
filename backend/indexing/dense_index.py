@@ -72,7 +72,7 @@ class DenseIndexer:
             # Create the Point
             points.append(models.PointStruct(
                 id=point_id,
-                vector=vectors[i],
+                vector={"dense":vectors[i]},
                 payload=payload
             ))
 
