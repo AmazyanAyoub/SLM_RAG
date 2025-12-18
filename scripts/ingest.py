@@ -33,7 +33,7 @@ async def main():
 
     # Initialize Components
     loader = PDFLoader()
-    chunker = Chunker(chunk_size=512, chunk_overlap=100)
+    chunker = Chunker(chunk_size=1024, chunk_overlap=200)
     
     # Initialize Enricher
     try:

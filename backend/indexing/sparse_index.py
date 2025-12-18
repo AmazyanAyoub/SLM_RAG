@@ -27,7 +27,7 @@ class SparseIndexer:
         # We load BGE-M3 but we will ONLY ask for sparse vectors
         self.model = BGEM3FlagModel(model_name_or_path=local_path, use_fp16=False)
         self.db_client = VectorDBClient()
-        self.collection_name = settings.retrieval.vector_store_collection
+        self.collection_name = self.db_client.collection_name
 
     def compute_sparse_vectors(self, texts: List[str]) -> List[Any]:
         """
