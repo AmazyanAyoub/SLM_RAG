@@ -1,6 +1,7 @@
 version: '3.8'
 
 services:
+  # --- YOUR EXISTING QDRANT SERVICE ---
   qdrant:
     image: qdrant/qdrant:latest
     container_name: slm_rag_qdrant
@@ -8,10 +9,28 @@ services:
       - "6333:6333"
       - "6334:6334"
     environment:
-      - QDRANT__SERVICE__API_KEY=my_secret_api_key_2025  # <--- This is the new part
+      - QDRANT__SERVICE__API_KEY=my_secret_api_key_2025
     volumes:
       - ./data/qdrant_storage:/qdrant/storage:z
     restart: always
 
-  # Optional: Qdrant Web UI (if you want to see your vectors)
-  # You can access the dashboard at localhost:6333/dashboard
+  # --- NEW OLLAMA SERVICE (GPU ENABLED) ---
+  ollama:
+    container_name: ollama
+    image: ollama/ollama:latest
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama_storage:/root/.ollama
+    restart: always
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+
+# --- VOLUMES SECTION ---
+volumes:
+  ollama_storage:

@@ -4,6 +4,8 @@ from qdrant_client.http import models
 from backend.core.config_loader import settings
 from sentence_transformers import CrossEncoder
 
+from backend.models.embedding_client import embed_queries, embed_sparse
+
 class VectorDBClient:
     def __init__(self):
         """
@@ -23,7 +25,7 @@ class VectorDBClient:
         # Append _large to create a separate collection for the larger chunks
         self.collection_name = f"{settings.retrieval.vector_store_collection}_large"
         self.vector_size = 1024 # Standard for BGE-M3 dense embeddings
-        self.reranker = CrossEncoder('BAAI/bge-reranker-v2-m3', max_length=512)
+        self.reranker = CrossEncoder('BAAI/bge-reranker-v2-m3', max_length=512, device="cuda")
 
         # Auto-create collection on startup
         self._ensure_collection_exists()
@@ -66,36 +68,20 @@ class VectorDBClient:
             points=points
         )
 
-    # def search(self, query_dense: list, query_sparse_indices: list, query_sparse_values: list, limit: int = 5):
-    #     """
-    #     Performs Hybrid Search (Dense + Sparse) with RRF Fusion.
-    #     """
-    #     return self.client.query_points(
-    #         collection_name=self.collection_name,
-    #         prefetch=[
-    #             models.Prefetch(
-    #                 query=query_dense,
-    #                 using="dense", # Now this matches FIX 1
-    #                 limit=limit * 2, 
-    #             ),
-    #             models.Prefetch(
-    #                 query=models.SparseVector(
-    #                     indices=query_sparse_indices,
-    #                     values=query_sparse_values
-    #                 ),
-    #                 using="sparse", # Now this matches FIX 2
-    #                 limit=limit * 2,
-    #             ),
-    #         ],
-    #         query=models.FusionQuery(fusion=models.Fusion.RRF), # Reciprocal Rank Fusion
-    #         limit=limit,
-    #         with_payload=True
-    #     ).points
-
-    def search(self, query_text: str, query_dense: list, query_sparse_indices: list, query_sparse_values: list, limit: int = 5):
+    def search(self, query_text: str, limit: int = 5):
         """
         Performs Hybrid Search (Dense + Sparse) followed by Re-Ranking.
+        Generates embeddings internally.
         """
+        # 0. GENERATE EMBEDDINGS
+        # Dense
+        query_dense = embed_queries([query_text])[0]
+        
+        # Sparse
+        sparse_output = embed_sparse([query_text])[0]
+        query_sparse_indices = list(int(k) for k in sparse_output.keys())
+        query_sparse_values = list(float(v) for v in sparse_output.values())
+
         # 1. RETRIEVE CANDIDATES (Fetch more than needed, e.g., Top 15)
         # We need a pool of candidates for the judge to review.
         initial_limit = 15 

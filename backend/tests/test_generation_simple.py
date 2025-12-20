@@ -72,11 +72,11 @@ math_questions = [
     # --- SHORT QUESTIONS (5 Very Easy, 5 Very Hard) ---
 
     # Short - Very Easy
-    "According to Article 2, calculate the monthly maintenance amount (forfait d'entretien) for a couple (2 people) by applying the multiplier of 1.53 to the base amount.",
-    "Using the rate in Article 5, what is the total cost coverage for 30 hours of childcare (frais de garde)?",
-    "According to Article 9, calculate the total annual maximum reimbursement for holiday camps (camps de vacances) for a family with 2 children.",
-    "Calculate the total installation allowance (frais d'installation) for a single person as defined in Article 9.",
-    "According to Article 19, what is the combined monthly amount for 'pocket money' and 'clothing' for a single adult beneficiary?",
+    # "According to Article 2, calculate the monthly maintenance amount (forfait d'entretien) for a couple (2 people) by applying the multiplier of 1.53 to the base amount.",
+    # "Using the rate in Article 5, what is the total cost coverage for 30 hours of childcare (frais de garde)?",
+    # "According to Article 9, calculate the total annual maximum reimbursement for holiday camps (camps de vacances) for a family with 2 children.",
+    # "Calculate the total installation allowance (frais d'installation) for a single person as defined in Article 9.",
+    # "According to Article 19, what is the combined monthly amount for 'pocket money' and 'clothing' for a single adult beneficiary?",
 
     # # Short - Very Hard
     # "Calculate the monthly maintenance allowance for a household of 7 people using the base amount and the coefficients provided in Article 2 (including the add-on for people beyond 5).",
@@ -88,15 +88,15 @@ math_questions = [
     # --- LONG QUESTIONS (5 Very Easy, 5 Very Hard) ---
 
     # Long - Very Easy
-    "A beneficiary works full-time (100% activity) for a whole year. According to Article 8, calculate the total annual amount of the income franchise they are entitled to.",
-    "A single parent sends their 3 children to holiday camps during the summer. According to the limits set in Article 9, what is the maximum total reimbursement the family can receive for these camps in a single calendar year?",
-    "Under Article 5, a parent requires childcare for 50 hours in a specific month to attend a professional insertion program. Using the hourly rate provided, calculate the total cost coverage for that month.",
-    "A young adult (20 years old) student lives with their parents and is eligible for the integration supplement. According to Article 7, calculate the total amount of this supplement they generate for the family over a period of 6 months.",
-    "A single person is receiving exceptional financial aid under Article 19. Calculate the total monthly sum of their maximum rent coverage limit plus their pocket money allowance.",
+    # "A beneficiary works full-time (100% activity) for a whole year. According to Article 8, calculate the total annual amount of the income franchise they are entitled to.",
+    # "A single parent sends their 3 children to holiday camps during the summer. According to the limits set in Article 9, what is the maximum total reimbursement the family can receive for these camps in a single calendar year?",
+    # "Under Article 5, a parent requires childcare for 50 hours in a specific month to attend a professional insertion program. Using the hourly rate provided, calculate the total cost coverage for that month.",
+    # "A young adult (20 years old) student lives with their parents and is eligible for the integration supplement. According to Article 7, calculate the total amount of this supplement they generate for the family over a period of 6 months.",
+    # "A single person is receiving exceptional financial aid under Article 19. Calculate the total monthly sum of their maximum rent coverage limit plus their pocket money allowance.",
 
     # # Long - Very Hard
     # "A family consists of a couple and 4 children (total 6 people). Calculate their total monthly entitlement sum including the Base Maintenance (Article 2) and the Maximum Rent (Article 3).",
-    # "A household of 4 people (couple + 2 children) are all prescribed a specific medical diet. According to Article 5, which applies the Article 2 coefficients to the base diet allowance, calculate the total monthly diet allocation for this entire family.",
+    "A household of 4 people (couple + 2 children) are all prescribed a specific medical diet. According to Article 5, which applies the Article 2 coefficients to the base diet allowance, calculate the total monthly diet allocation for this entire family.",
     # "A beneficiary works at 80% activity (generating a franchise) and has a dependent child aged 16 who attends school (generating an integration supplement). Calculate the total monthly sum of these two specific incentive benefits based on Articles 7 and 8.",
     # "A family of 5 people (Couple + 3 children) moves into a new apartment. They claim the maximum Moving Allowance and the maximum Installation Allowance under Article 9. Calculate the grand total of these one-off benefits.",
     # "Calculate the difference in the Maximum Rent allowance (Article 3) between a 'Couple with 2 children' and a 'Couple with 4 children'. Return the difference as a positive number."
@@ -124,8 +124,9 @@ def run_benchmark():
         
         llm = ChatOllama(
             model=MODEL_NAME,
-            base_url=OLLAMA_BASE_URL,
+            base_url="http://localhost:11434",
             temperature=0.1,
+            num_ctx=2048,
             keep_alive="5m"
         )
         print("✅ Components Ready.")

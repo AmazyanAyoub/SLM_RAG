@@ -13,3 +13,5 @@ env/
 # IDE settings
 .vscode/
 .idea/
+
+.gemini

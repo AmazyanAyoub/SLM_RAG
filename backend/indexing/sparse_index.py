@@ -1,46 +1,19 @@
 import uuid
 import time
 from typing import List, Dict, Any
-from FlagEmbedding import BGEM3FlagModel
 from backend.indexing.vector_store import VectorDBClient
-from backend.core.config_loader import settings
+from backend.models.embedding_client import embed_sparse
 from qdrant_client.http import models
-from huggingface_hub import snapshot_download
 
 
 class SparseIndexer:
     def __init__(self):
         """
-        Initializes the Sparse Indexer using BGE-M3 (Sparse Mode Only).
+        Initializes the Sparse Indexer.
+        The Model is now handled by the shared embedding_client.
         """
-        model_name = settings.retrieval.embedder_model # e.g. BAAI/bge-m3
-        print(f"🧠 Loading Sparse Model: {model_name}...")
-
-        # 1. SMART DOWNLOAD: Download ONLY what we need (Skip the 2GB ONNX file)
-        # This prevents the "Disk Full" error
-        local_path = snapshot_download(
-            repo_id=model_name,
-            ignore_patterns=["*.onnx", "*.onnx_data", "flax_model.msgpack", "rust_model.ot"],
-            resume_download=True
-        )
-        
-        # We load BGE-M3 but we will ONLY ask for sparse vectors
-        self.model = BGEM3FlagModel(model_name_or_path=local_path, use_fp16=False)
         self.db_client = VectorDBClient()
         self.collection_name = self.db_client.collection_name
-
-    def compute_sparse_vectors(self, texts: List[str]) -> List[Any]:
-        """
-        Generates ONLY sparse vectors (lexical weights) for a list of texts.
-        """
-        output = self.model.encode(
-            texts, 
-            return_dense=False, 
-            return_sparse=True, 
-            return_colbert_vecs=False
-        )
-        # Returns a list of dictionaries: [{'word_id': weight}, ...]
-        return output['lexical_weights']
 
     def index_chunks(self, chunks: List[Dict[str, Any]]):
         if not chunks:
@@ -53,7 +26,7 @@ class SparseIndexer:
         search_texts = [c.get("search_content", c["text"]) for c in chunks]
         
         # 2. Compute Vectors
-        sparse_outputs = self.compute_sparse_vectors(search_texts)
+        sparse_outputs = embed_sparse(search_texts)
         
         # 3. Prepare Batch Update for Qdrant
         # We use 'update_vectors' because we assume Dense vectors might already exist.

@@ -1,9 +1,8 @@
 # BGE-M3 embedding logic
 import time
 from typing import List, Dict, Any
-from sentence_transformers import SentenceTransformer
 from backend.indexing.vector_store import VectorDBClient
-from backend.core.config_loader import settings
+from backend.models.embedding_client import embed_documents
 from qdrant_client.http import models
 import uuid
 
@@ -11,24 +10,10 @@ import uuid
 class DenseIndexer:
     def __init__(self):
         """
-        Initialize the Embedding Model (BGE-M3) and the Database Client.
+        Initialize the Database Client.
+        The Embedding Model is now handled by the shared embedding_client.
         """
-        model_name = settings.retrieval.embedder_model # e.g., "BAAI/bge-m3"
-        print(f"🧠 Loading Embedding Model: {model_name}...")
-        
-        # We use SentenceTransformer for easy local embedding
-        # device="cpu" or "cuda" (if you have an NVIDIA GPU)
-        self.model = SentenceTransformer(model_name, device="cpu")
         self.db_client = VectorDBClient()
-        
-    def embed_texts(self, texts: List[str]) -> List[List[float]]:
-        """
-        Converts a list of strings into a list of vectors.
-        """
-        # BGE-M3 is powerful but can be heavy. 
-        # We normalize embeddings to ensure Dot Product works like Cosine Similarity.
-        embeddings = self.model.encode(texts, normalize_embeddings=True)
-        return embeddings.tolist()
 
     def index_chunks(self, chunks: List[Dict[str, Any]]):
         """
@@ -46,7 +31,7 @@ class DenseIndexer:
         search_texts = [c.get("search_content", c["text"]) for c in chunks]
         
         # 2. Generate Vectors
-        vectors = self.embed_texts(search_texts)
+        vectors = embed_documents(search_texts)
         
         # 3. Prepare Points for Qdrant
         points = []
