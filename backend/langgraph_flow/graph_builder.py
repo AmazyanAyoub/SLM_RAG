@@ -10,7 +10,7 @@ from backend.langgraph_flow.nodes.hallucination_check import hallucination_check
 
 def decide_route(state):
     """
-    Route based on the classification result.
+    Route based on the classification results.
     """
     print("---DECIDE ROUTE---")
     classification = state["classification"]
