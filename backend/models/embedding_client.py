@@ -43,7 +43,7 @@ def _get_embedding_choice() -> Tuple[str, str]:
 def get_sentence_transformer() -> SentenceTransformer:
     hf_id, _ = _get_embedding_choice()
     # Lazy-load & cache the model in memory
-    return SentenceTransformer(hf_id)
+    return SentenceTransformer(hf_id, device="cuda")
 
 
 @lru_cache(maxsize=1)
@@ -69,7 +69,7 @@ def get_sparse_model() -> BGEM3FlagModel:
         resume_download=True
     )
     
-    return BGEM3FlagModel(model_name_or_path=local_path, use_fp16=True, device="cpu")
+    return BGEM3FlagModel(model_name_or_path=local_path, use_fp16=True, device="cuda")
 
 
 def _apply_bge_query_prefix(texts: List[str]) -> List[str]:

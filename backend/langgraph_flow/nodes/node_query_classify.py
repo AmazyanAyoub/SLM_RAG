@@ -26,8 +26,8 @@ def classify_query(state: GraphState):
     print("---NODE: CLASSIFY QUERY---")
     question = state["question"]
     
-    # 2. Get the Student LLM
-    llm = LLMFactory.get_student_llm()
+    # 2. Get the Fast LLM
+    llm = LLMFactory.get_fast_llm()
     
     # 3. Create the Structured Output LLM
     structured_llm_router = llm.with_structured_output(RouteQuery)
@@ -61,3 +61,12 @@ def classify_query(state: GraphState):
     
     # Update State
     return {"steps": ["classify_query"], "classification": decision}
+
+if __name__ == "__main__":
+    # Test 1: Vector Store Intent
+    print("--- TEST 1: Vector Store Intent ---")
+    print(classify_query({"question": "What is the deductible for health insurance?", "steps": []}))
+    
+    # Test 2: General Chat Intent
+    print("\n--- TEST 2: General Chat Intent ---")
+    print(classify_query({"question": "Hi, how are you today?", "steps": []}))

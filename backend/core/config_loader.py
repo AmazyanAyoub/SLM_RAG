@@ -31,8 +31,8 @@ class RetrievalConfig(BaseModel):
 
 class AppConfig(BaseModel):
     project_name: str
-    student_llm: LLMConfig
-    teacher_llm: LLMConfig
+    fast_llm: LLMConfig
+    smart_llm: LLMConfig
     retrieval: RetrievalConfig
     
     @classmethod
@@ -53,19 +53,21 @@ class AppConfig(BaseModel):
         # 2. Extract LLM Configs
         llm_section = raw_config.get("llm", {})
         
-        student_conf = LLMConfig(
-            provider=llm_section["student"]["provider"],
-            model_name=llm_section["student"]["model_name"],
-            base_url=llm_section["student"].get("base_url"),
-            temperature=llm_section["student"].get("temperature", 0.1),
+        fast_conf = LLMConfig(
+            provider=llm_section["fast"]["provider"],
+            model_name=llm_section["fast"]["model_name"],
+            base_url=llm_section["fast"].get("base_url"),
+            temperature=llm_section["fast"].get("temperature", 0.1),
             # Ollama usually doesn't need an API key, but we allow it
             api_key=None 
         )
 
-        teacher_conf = LLMConfig(
-            provider=llm_section["teacher"]["provider"],
-            model_name=llm_section["teacher"]["model_name"],
-            api_key=os.getenv("GROQ_API_KEY") # INJECTED FROM ENV
+        smart_conf = LLMConfig(
+            provider=llm_section["smart"]["provider"],
+            model_name=llm_section["smart"]["model_name"],
+            base_url=llm_section["smart"].get("base_url"),
+            temperature=llm_section["smart"].get("temperature", 0.1),
+            api_key=os.getenv("GROQ_API_KEY") if llm_section["smart"]["provider"] == "groq" else None
         )
 
         # 3. Extract Retrieval Config
@@ -84,8 +86,8 @@ class AppConfig(BaseModel):
 
         return cls(
             project_name=project_name,
-            student_llm=student_conf,
-            teacher_llm=teacher_conf,
+            fast_llm=fast_conf,
+            smart_llm=smart_conf,
             retrieval=retrieval_conf
         )
 

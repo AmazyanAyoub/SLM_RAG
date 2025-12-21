@@ -8,14 +8,12 @@ from langchain_ollama import ChatOllama
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.output_parsers import StrOutputParser
 
-from backend.indexing.dense_index import DenseIndexer
-from backend.indexing.sparse_index import SparseIndexer # <--- NEW IMPORT
 from backend.indexing.vector_store import VectorDBClient
 
 # ==========================================
 # ⚙️ CONFIGURATION
 # ==========================================
-OLLAMA_BASE_URL = "http://18.132.143.112:14528"
+# OLLAMA_BASE_URL = "http://18.132.143.112:14528"
 # MODEL_NAME = "qwen3:4b-instruct-2507-fp16" 
 MODEL_NAME = "qwen3:8b" 
 
@@ -118,15 +116,13 @@ def run_benchmark():
     # 1. SETUP (Run Once)
     print("⚙️ Initializing Hybrid RAG components...")
     try:
-        dense_indexer = DenseIndexer()
-        sparse_indexer = SparseIndexer() # <--- NEW
         client = VectorDBClient()
         
         llm = ChatOllama(
             model=MODEL_NAME,
             base_url="http://localhost:11434",
             temperature=0.1,
-            num_ctx=2048,
+            num_ctx=4096,
             keep_alive="5m"
         )
         print("✅ Components Ready.")
@@ -166,22 +162,8 @@ def run_benchmark():
         q_start = time.time()
         
         # A. HYBRID RETRIEVE
-        # 1. Dense Vector
-        query_dense = dense_indexer.embed_texts([question])[0]
-        
-        # 2. Sparse Vector
-        sparse_output = sparse_indexer.compute_sparse_vectors([question])[0]
-        query_indices = [int(k) for k in sparse_output.keys()]
-        query_values = [float(v) for v in sparse_output.values()]
-        
-        # 3. Hybrid Search
-        search_hits = client.search(
-            query_text=question,
-            query_dense=query_dense,
-            query_sparse_indices=query_indices,
-            query_sparse_values=query_values,
-            limit=5
-        )
+        # The client now handles embedding generation internally
+        search_hits = client.search(query_text=question, limit=5)
         
         context_text = ""
         sources = []

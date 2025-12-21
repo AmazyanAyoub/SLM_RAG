@@ -18,7 +18,7 @@ def rewrite_query(state: GraphState):
     
     # 1. Initialize LLM
     try:
-        llm = LLMFactory.get_student_llm()
+        llm = LLMFactory.get_fast_llm()
         
         # 2. Define Prompt
         system = """You a question re-writer that converts an input question to a better version that is optimized \n 
@@ -46,3 +46,8 @@ def rewrite_query(state: GraphState):
         "question": better_question,
         "steps": state.get("steps", []) + ["rewrite_query"]
     }
+
+if __name__ == "__main__":
+    print("--- TEST: Rewrite Query ---")
+    state = {"question": "aid limits", "steps": []}
+    print(rewrite_query(state))

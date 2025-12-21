@@ -26,7 +26,7 @@ def hallucination_check(state: GraphState):
     documents = state["documents"]
     generation = state["generation"]
     
-    llm = LLMFactory.get_student_llm()
+    llm = LLMFactory.get_fast_llm()
 
     # --- CHECK 1: Hallucination (Groundedness) ---
     structured_llm_grader = llm.with_structured_output(GradeHallucinations)
@@ -85,3 +85,22 @@ def hallucination_check(state: GraphState):
     else:
         print("❌ Decision: Generation is NOT grounded in documents (Hallucination).")
         return {"grade": "hallucination", "steps": state.get("steps", []) + ["hallucination_check"]}
+
+if __name__ == "__main__":
+    from langchain_core.documents import Document
+    
+    print("--- TEST: Hallucination Check ---")
+    docs = [Document(page_content="The sky is blue.")]
+    
+    # Test 1: Grounded & Relevant
+    state = {
+        "question": "What color is the sky?",
+        "documents": docs,
+        "generation": "The sky is blue.",
+        "steps": []
+    }
+    print("\nTest 1 (Grounded):", hallucination_check(state))
+    
+    # Test 2: Hallucination
+    state["generation"] = "The sky is green."
+    print("\nTest 2 (Hallucination):", hallucination_check(state))

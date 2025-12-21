@@ -56,3 +56,13 @@ def retrieve(state: GraphState):
         "steps": ["retrieve"],
         # Increment attempts if this was a retry (handled by logic outside, but good to know)
     }
+
+if __name__ == "__main__":
+    # Test Retrieval
+    print("--- TEST: Retrieval ---")
+    # Ensure you have data in Qdrant for this to work
+    state = {"question": "What is the fortune limit?", "steps": []}
+    result = retrieve(state)
+    print(f"Documents found: {len(result['documents'])}")
+    if result['documents']:
+        print(f"First Doc Preview: {result['documents'][0].page_content[:100]}...")

@@ -24,7 +24,7 @@ def grade_documents(state: GraphState):
     
     # 1. Initialize LLM & Grader
     try:
-        llm = LLMFactory.get_student_llm()
+        llm = LLMFactory.get_fast_llm()
         structured_llm_grader = llm.with_structured_output(GradeDocuments)
 
         # 2. Define Prompt
@@ -71,3 +71,20 @@ def grade_documents(state: GraphState):
         "documents": filtered_docs,
         "steps": state.get("steps", []) + ["grade_documents"]
     }
+
+if __name__ == "__main__":
+    from langchain_core.documents import Document
+    
+    print("--- TEST: Grade Documents ---")
+    docs = [
+        Document(page_content="The fortune limit for a couple is $100,000.", metadata={"id": "1"}),
+        Document(page_content="The weather is nice today and the sun is shining.", metadata={"id": "2"})
+    ]
+    state = {
+        "question": "What is the fortune limit?",
+        "documents": docs,
+        "steps": []
+    }
+    result = grade_documents(state)
+    print(f"Original docs: {len(docs)}")
+    print(f"Filtered docs: {len(result['documents'])}")

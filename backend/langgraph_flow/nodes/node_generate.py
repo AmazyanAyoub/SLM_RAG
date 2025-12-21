@@ -17,8 +17,8 @@ def generate(state: GraphState):
     question = state["question"]
     documents = state["documents"]
     
-    # 1. Initialize LLM
-    llm = LLMFactory.get_student_llm()
+    # 1. Initialize LLM (Smart Model for high quality answer)
+    llm = LLMFactory.get_smart_llm()
     
     # 2. Define Prompt
     system = """You are an assistant for question-answering tasks. 
@@ -51,3 +51,15 @@ def generate(state: GraphState):
         "generation": generation,
         "steps": state.get("steps", []) + ["generate"]
     }
+
+if __name__ == "__main__":
+    from langchain_core.documents import Document
+    
+    print("--- TEST: Generate ---")
+    docs = [Document(page_content="The fortune limit for a couple is $100,000.")]
+    state = {
+        "question": "What is the fortune limit?",
+        "documents": docs,
+        "steps": []
+    }
+    print(generate(state))
