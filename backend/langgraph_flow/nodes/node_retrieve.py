@@ -28,11 +28,11 @@ def retrieve(state: GraphState):
         for hit in results:
             # Reconstruct content if 'search_content' is missing
             payload = hit.payload or {}
-            content = payload.get("search_content")
-            if not content:
-                summary = payload.get("context_summary", "")
-                raw_text = payload.get("text", "")
-                content = f"{summary}\n{raw_text}" if summary else raw_text
+            # content = payload.get("search_content")
+            # if not content:
+            summary = payload.get("context_summary", "")
+            raw_text = payload.get("text", "")
+            content = f"{summary}\n{raw_text}" if summary else raw_text
             
             # Map Qdrant hit to Document
             doc = Document(
@@ -65,4 +65,4 @@ if __name__ == "__main__":
     result = retrieve(state)
     print(f"Documents found: {len(result['documents'])}")
     if result['documents']:
-        print(f"First Doc Preview: {result['documents'][0].page_content[:100]}...")
+        print(f"First Doc Preview: {result['documents'][0]}...")

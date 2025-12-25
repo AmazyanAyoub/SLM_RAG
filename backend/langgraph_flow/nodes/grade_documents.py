@@ -48,6 +48,7 @@ def grade_documents(state: GraphState):
             try:
                 score = retrieval_grader.invoke({"question": question, "document": d.page_content})
                 grade = score.binary_score
+                print(f"grade: {grade}")
                 
                 if grade.lower() == "yes":
                     # print(f"✅ Document relevant: {d.metadata.get('id', 'unknown')}")

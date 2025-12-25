@@ -13,7 +13,7 @@ from langchain_ollama import ChatOllama
 
 # REMOTE_OLLAMA_URL = "http://18.132.143.112:14528"
 # CONTEXT_MODEL = "qwen3:8b"  # Updated to match your local model
-CONTEXT_MODEL = "qwen3:4b-instruct-2507-fp16"  # Local Ollama model for context enrichment
+CONTEXT_MODEL = "qwen3:4b"  # Local Ollama model for context enrichment
 
 
 class ContextualEnricher:
@@ -34,10 +34,10 @@ class ContextualEnricher:
 
         self.llm = ChatOllama(
             model=CONTEXT_MODEL,
-            base_url="http://ollama:11434",
+            base_url="http://localhost:11434",
             temperature=0.1, 
-            num_ctx=8192,
-            keep_alive="5m"
+            num_ctx=4096,
+            keep_alive="15m"
         )
 
 

@@ -21,8 +21,9 @@ def rewrite_query(state: GraphState):
         llm = LLMFactory.get_fast_llm()
         
         # 2. Define Prompt
-        system = """You a question re-writer that converts an input question to a better version that is optimized \n 
-        for vectorstore retrieval. Look at the input and try to reason about the underlying semantic intent / meaning."""
+        system = """You are a question re-writer that converts an input question to a better version that is optimized 
+        for vectorstore retrieval. Look at the input and try to reason about the underlying semantic intent / meaning.
+        Output ONLY the rewritten question. Do not include any explanations, reasoning, or markdown."""
         
         re_write_prompt = ChatPromptTemplate.from_messages(
             [
@@ -44,7 +45,8 @@ def rewrite_query(state: GraphState):
 
     return {
         "question": better_question,
-        "steps": state.get("steps", []) + ["rewrite_query"]
+        "steps": state.get("steps", []) + ["rewrite_query"],
+        "attempts": state.get("attempts", 0) + 1
     }
 
 if __name__ == "__main__":

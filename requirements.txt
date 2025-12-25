@@ -7,6 +7,8 @@ langchain-groq
 
 # Vector Database
 qdrant-client
+psycopg2-binary
+pgvector
 
 # Retrieval & Reranking (The 2025 Upgrade)
 ragatouille  # For ColBERTv2 (Phase 1)

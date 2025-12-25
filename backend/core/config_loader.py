@@ -25,6 +25,13 @@ class RetrievalConfig(BaseModel):
     vector_store_collection: str
     vector_store_api_key: Optional[str] = None
     
+    # Postgres Config
+    postgres_host: str = "localhost"
+    postgres_port: int = 5432
+    postgres_db: str = "postgres"
+    postgres_user: str = "postgres"
+    postgres_password: Optional[str] = None
+    
     # Phase 1.5 & Phase 4 flags
     enable_late_interaction: bool = False
     enable_graph: bool = False
@@ -73,6 +80,7 @@ class AppConfig(BaseModel):
         # 3. Extract Retrieval Config
         ret_section = raw_config.get("retrieval", {})
         qdrant_section = ret_section.get("vector_store", {})
+        pg_section = ret_section.get("postgres", {})
         
         retrieval_conf = RetrievalConfig(
             embedder_name=ret_section["embedder"]["model_name"],
@@ -80,6 +88,14 @@ class AppConfig(BaseModel):
             vector_store_port=qdrant_section["port"],
             vector_store_collection=qdrant_section["collection"],
             vector_store_api_key=os.getenv("QDRANT_API_KEY"), # INJECTED FROM ENV
+            
+            # Postgres
+            postgres_host=pg_section.get("host", "localhost"),
+            postgres_port=pg_section.get("port", 5432),
+            postgres_db=pg_section.get("dbname", "postgres"),
+            postgres_user=pg_section.get("user", "postgres"),
+            postgres_password=os.getenv("POSTGRES_PASSWORD"),
+            
             enable_late_interaction=ret_section.get("late_interaction", {}).get("enabled", False),
             enable_graph=ret_section.get("graph", {}).get("enabled", False)
         )

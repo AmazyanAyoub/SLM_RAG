@@ -4,7 +4,7 @@ from backend.langgraph_flow.state import GraphState
 from backend.langgraph_flow.nodes.node_query_classify import classify_query
 from backend.langgraph_flow.nodes.rewrite_query import rewrite_query
 from backend.langgraph_flow.nodes.node_retrieve import retrieve
-from backend.langgraph_flow.nodes.grade_documents import grade_documents
+# from backend.langgraph_flow.nodes.grade_documents import grade_documents
 from backend.langgraph_flow.nodes.node_generate import generate
 from backend.langgraph_flow.nodes.hallucination_check import hallucination_check
 
@@ -19,20 +19,26 @@ def decide_route(state):
     else:
         return "generate"
 
-def check_doc_relevance(state):
-    """
-    Check if we have relevant documents after grading.
-    """
-    print("---CHECK DOC RELEVANCE---")
-    documents = state["documents"]
-    if not documents:
-        # All documents filtered out, rewrite query
-        print("---DECISION: NO DOCUMENTS, REWRITE QUERY---")
-        return "rewrite_query"
-    else:
-        # We have relevant documents, generate answer
-        print("---DECISION: DOCUMENTS FOUND, GENERATE---")
-        return "generate"
+# def check_doc_relevance(state):
+#     """
+#     Check if we have relevant documents after grading.
+#     """
+#     print("---CHECK DOC RELEVANCE---")
+#     documents = state["documents"]
+#     attempts = state.get("attempts", 0)
+#     
+#     if not documents:
+#         if attempts >= 3:
+#             print("---DECISION: MAX RETRIES REACHED, GENERATE WITHOUT DOCS---")
+#             return "generate"
+#             
+#         # All documents filtered out, rewrite query (Retry)
+#         print("---DECISION: NO DOCUMENTS, REWRITE QUERY---")
+#         return "rewrite_query"
+#     else:
+#         # We have relevant documents, generate answer
+#         print("---DECISION: DOCUMENTS FOUND, GENERATE---")
+#         return "generate"
 
 def grade_generation_v_documents_and_question(state):
     """
@@ -40,11 +46,16 @@ def grade_generation_v_documents_and_question(state):
     """
     print("---GRADE GENERATION---")
     grade = state["grade"]
+    attempts = state.get("attempts", 0)
     
     if grade == "useful":
         print("---DECISION: USEFUL, END---")
         return "useful"
     elif grade == "not useful":
+        if attempts >= 3:
+            print("---DECISION: MAX RETRIES REACHED, ENDING---")
+            return "useful" # End with what we have
+            
         print("---DECISION: NOT USEFUL, REWRITE QUERY---")
         return "not useful"
     else:
@@ -59,7 +70,7 @@ workflow = StateGraph(GraphState)
 workflow.add_node("classify_query", classify_query)
 workflow.add_node("rewrite_query", rewrite_query)
 workflow.add_node("retrieve", retrieve)
-workflow.add_node("grade_documents", grade_documents)
+# workflow.add_node("grade_documents", grade_documents)
 workflow.add_node("generate", generate)
 workflow.add_node("hallucination_check", hallucination_check)
 
@@ -71,23 +82,23 @@ workflow.add_conditional_edges(
     "classify_query",
     decide_route,
     {
-        "vector_store": "rewrite_query",
+        "vector_store": "retrieve", # <--- FIX: Retrieve first, rewrite only if needed
         "generate": "generate",
     }
 )
 
 workflow.add_edge("rewrite_query", "retrieve")
-workflow.add_edge("retrieve", "grade_documents")
+workflow.add_edge("retrieve", "generate")
 
 # Conditional Edge from Grader (Empty docs check)
-workflow.add_conditional_edges(
-    "grade_documents",
-    check_doc_relevance,
-    {
-        "rewrite_query": "rewrite_query",
-        "generate": "generate",
-    }
-)
+# workflow.add_conditional_edges(
+#     "grade_documents",
+#     check_doc_relevance,
+#     {
+#         "rewrite_query": "rewrite_query",
+#         "generate": "generate",
+#     }
+# )
 
 workflow.add_edge("generate", "hallucination_check")
 
