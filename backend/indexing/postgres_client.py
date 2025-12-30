@@ -210,6 +210,85 @@ class PostgresVectorDB:
 
         candidates.sort(key=lambda x: x.score, reverse=True)
         return candidates[:limit]
+    
+
+    def search_dense(self, query_text: str, limit: int = 5, filter: dict = None):
+            # 0. Embed Query (Dense Only)
+            # We only generate the dense vector. No sparse embedding needed.
+            query_dense = embed_queries([query_text])[0]
+
+            # 1. Build Dynamic Filter Clause
+            where_sql, filter_args = self._build_filter_clause(filter)
+
+            # 2. Dense Search SQL
+            # We fetch 'initial_limit' (15) candidates to give the Re-Ranker enough options to sort.
+            initial_limit = 15
+            
+            query_sql = sql.SQL("""
+            SELECT 
+                id, 
+                content, 
+                metadata, 
+                (dense_vector <=> %s::vector) as distance
+            FROM {table}
+            WHERE {where_clause}
+            ORDER BY distance ASC
+            LIMIT %s;
+            """).format(
+                table=sql.Identifier(self.table_name),
+                where_clause=where_sql
+            )
+            
+            # Combine arguments: [Filter Args] + [Dense Vector] + [Initial Limit]
+            full_args = filter_args + [query_dense, initial_limit]
+
+            candidates = []
+            with self.conn.cursor() as cur:
+                cur.execute(query_sql, full_args)
+                rows = cur.fetchall()
+                
+                for row in rows:
+                    # row structure: 0=id, 1=content, 2=metadata, 3=distance
+                    # We put the metadata in the payload. 
+                    # Note: We ensure 'search_content' is accessible for the re-ranker. 
+                    # If your text is in row[1] (content column) but not in metadata, 
+                    # we explicitly add it to the payload here.
+                    payload = row[2]
+                    if "search_content" not in payload:
+                        payload["search_content"] = row[1]
+
+                    candidates.append(SearchResult(
+                        id=row[0],
+                        payload=payload, 
+                        score=row[3] # This is distance (lower is better), but re-ranker will overwrite it.
+                    ))
+
+            if not candidates:
+                return []
+
+            # 3. Re-Ranking (Cross-Encoder)
+            # This part remains EXACTLY the same. 
+            # The re-ranker is crucial for fixing the "ordering" of the top 15 results.
+            pairs = []
+            for hit in candidates:
+                doc_text = hit.payload.get("search_content")
+                if not doc_text:
+                    summary = hit.payload.get("context_summary", "")
+                    raw_text = hit.payload.get("text", "")
+                    doc_text = f"{summary}\n{raw_text}" if summary else raw_text
+                pairs.append([query_text, doc_text])
+
+            start_rerank = time.time()
+            scores = self.reranker.predict(pairs)
+            print(f"📊 Re-ranking took {time.time() - start_rerank:.4f}s")
+            
+            for i, hit in enumerate(candidates):
+                hit.score = float(scores[i])
+
+            # Sort by Re-Ranker score (Higher is better)
+            candidates.sort(key=lambda x: x.score, reverse=True)
+            
+            return candidates[:limit]
 
 # --- TEST BLOCK ---
 if __name__ == "__main__":

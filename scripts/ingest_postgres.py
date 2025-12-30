@@ -69,13 +69,14 @@ async def main():
     chunker = Chunker(chunk_size=CHUNK_SIZE, chunk_overlap=CHUNK_OVERLAP)
     chunks = []
     for doc in raw_docs:
-        doc_chunks = chunker.chunk_text(doc["text"], metadata={"source": doc["source"]})
+        # doc_chunks = chunker.chunk_text(doc["text"], metadata={"source": doc["source"]})
+        doc_chunks = chunker.chunk_hierarchical(doc["text"], metadata={"source": doc["source"]})
         for c in doc_chunks:
             c["search_content"] = c["text"]
         chunks.extend(doc_chunks)
 
     print(f"📦 Generated {len(chunks)} chunks.")
-    # enricher = None
+    enricher = None
     # 3. Contextual Enrichment (Async)
     if enricher:
         print("   👨‍🏫 Enriching chunks (using Neighbor Window strategy)...")

@@ -21,6 +21,9 @@ class VectorDBClient:
 
     def search(self, query_text: str, limit: int = 5):
         return self.client.search(query_text, limit)
+    
+    def search_dense(self, query_text: str, limit: int = 5):
+        return self.client.search_dense(query_text, limit)
 
 if __name__ == "__main__":
     print("--- TEST: VectorDBClient Factory ---")
