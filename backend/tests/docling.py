@@ -2,7 +2,13 @@
 # import re
 # import json
 # from collections import defaultdict, Counter
-# from docling.document_converter import DocumentConverter
+# from docling.document_converter import DocumentConverter, PdfFormatOption
+# from docling.datamodel.pipeline_options import (
+#     PdfPipelineOptions, 
+#     AcceleratorOptions, 
+#     AcceleratorDevice
+# )
+# from docling.datamodel.base_models import InputFormat
 
 # # Fix Windows Permission
 # os.environ["HF_HUB_DISABLE_SYMLINKS_WARNING"] = "1"
@@ -105,7 +111,23 @@
 # def run_general_pipeline(pdf_path):
 #     print(f"🚀 Processing: {pdf_path}...")
     
-#     converter = DocumentConverter()
+#     pipeline_options = PdfPipelineOptions(
+#         do_ocr=False,              # DISABLED: Won't read scanned text (Fast)
+#         do_table_structure=False,  # DISABLED: Won't analyze table rows/cols (Fast)
+        
+#         # ENABLE CUDA HERE
+#         accelerator_options=AcceleratorOptions(
+#             num_threads=4,         # Threads for CPU pre-processing
+#             device=AcceleratorDevice.CUDA  # Force GPU usage
+#         )
+#     )
+
+#     converter = DocumentConverter(
+#         format_options={
+#             InputFormat.PDF: PdfFormatOption(pipeline_options=pipeline_options)
+#         }
+#     )
+    
 #     result = converter.convert(pdf_path)
 #     doc = result.document
 
@@ -216,16 +238,16 @@ def run_docling_optimized(pdf_path):
     # ==========================================
     # 1. CONFIGURE PIPELINE 
     # ==========================================
-    pipeline_options = PdfPipelineOptions(
-        do_ocr=True,                      
-        do_table_structure=True,          
-        table_structure_options={"mode": TableFormerMode.ACCURATE} 
-    )
+    # pipeline_options = PdfPipelineOptions(
+    #     do_ocr=True,                      
+    #     do_table_structure=True,          
+    #     table_structure_options={"mode": TableFormerMode.ACCURATE} 
+    # )
 
     converter = DocumentConverter(
-        format_options={
-            InputFormat.PDF: PdfFormatOption(pipeline_options=pipeline_options)
-        }
+        # format_options={
+        #     InputFormat.PDF: PdfFormatOption(pipeline_options=pipeline_options)
+        # }
     )
 
     # ==========================================
