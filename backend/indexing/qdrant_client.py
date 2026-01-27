@@ -19,8 +19,9 @@ class QdrantVectorDB:
             port=settings.retrieval.vector_store_port,
             api_key=settings.retrieval.vector_store_api_key,
             https=False,
+            prefer_grpc=False
         )
-        self.collection_name = f"{settings.retrieval.vector_store_collection}_large"
+        self.collection_name = f"{settings.retrieval.vector_store_collection}_docling_Mostafa"
         self.vector_size = 1024 
         self.reranker = CrossEncoder('BAAI/bge-reranker-v2-m3', max_length=512, device="cuda")
 

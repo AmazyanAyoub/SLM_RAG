@@ -94,7 +94,7 @@ class AppConfig(BaseModel):
             postgres_port=pg_section.get("port", 5432),
             postgres_db=pg_section.get("dbname", "postgres"),
             postgres_user=pg_section.get("user", "postgres"),
-            postgres_password=os.getenv("POSTGRES_PASSWORD"),
+            postgres_password=pg_section.get("password","1234"),
             
             enable_late_interaction=ret_section.get("late_interaction", {}).get("enabled", False),
             enable_graph=ret_section.get("graph", {}).get("enabled", False)

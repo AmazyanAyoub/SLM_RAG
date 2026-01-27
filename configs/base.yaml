@@ -54,17 +54,19 @@ retrieval:
   # Main Vector Store
   vector_store:
     type: "qdrant"
-    host: "localhost"
+    host: "127.0.0.1"
     port: 6333
-    collection: "slm_rag_docling_v1" # Renamed to indicate contextual data
+    collection: "slm_rag_docling_v1_docling_mostafa" # Renamed to indicate contextual data
     api_key: "${QDRANT_API_KEY}" # Use env var placeholder
 
   # Postgres Vector Store
   postgres:
-    host: "localhost"
+    host: "127.0.0.1"
     port: 5432
     dbname: "postgres"
     user: "postgres"
+    password: "1234"
+
 
   # NEW: Phase 2 - User Memory
   memory:

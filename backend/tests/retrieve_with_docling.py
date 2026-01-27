@@ -15,14 +15,51 @@ from backend.indexing.vector_store import VectorDBClient
 # ==========================================
 # ⚙️ CONFIGURATION
 # ==========================================
-MODEL_NAME = "qwen3:4b"  # As requested
+# MODEL_NAME = "qwen3:4b-instruct-2507-fp16"
+MODEL_NAME = "qwen3:4b"
 
 queries = [
-        "According to Article 2, calculate the monthly maintenance amount (forfait d'entretien) for a couple (2 people) by applying the multiplier of 1.53 to the base amount.",
-        "Using the rate in Article 5, what is the total cost coverage for 30 hours of childcare (frais de garde)?",
-        "According to Article 9, calculate the total annual maximum reimbursement for holiday camps (camps de vacances) for a family with 2 children.",
-        "Calculate the total installation allowance (frais d'installation) for a single person as defined in Article 9.",
-        "According to Article 19, what is the combined monthly amount for 'pocket money' and 'clothing' for a single adult beneficiary?",
+    "Quel est le montant du forfait d'entretien pour une personne ?",
+    "Quel est le montant du forfait d'entretien pour une famille de 3 personnes ?",
+    "Quel est le montant du forfait d'entretien ?",
+    # "Quels sont les changements de montant au niveau du forfait d'entretien entre l'ancienne loi LIASI et la nouvelle loi LASLP ?",
+    # "Quel est dans la LASLP le montant du forfait d'entretien pour une famille de 7 personnes ?",
+    # "Quel est dans la RIASI le montant du forfait d'entretien pour une famille de 7 personnes ?",
+    "Quelle est la limite de fortune pour un couple sans enfant ?",
+    "Quelle est la limite de fortune pour un couple avec 2 enfants ?",
+    "Quelle est la limite de fortune pour un couple avec 1 enfant ?",
+    "Quelle est la limite de fortune pour une personne mineure ?",
+    "Quel est le forfait qui couvre les frais de repas scolaires ?",
+    "Quel est le montant de la franchise sur le revenu pour un revenu mensuel de 5000 frs ?",
+    "Quel est le montant de la franchise sur le revenu pour un revenu mensuel net de 5000 frs ?",
+    # "Quel est le montant de la franchise sur le revenu pour un revenu mensuel brut de 5000 frs ?",
+    # "Quels est le délai de prise en charge des frais dentaires après approbation du médecin-dentiste conseil ?",
+    # "Quel est le montant de l'aide d'urgence pour une famille de 5 personnes ?",
+    # "Soit un dossier avec une seule personne aidée ayant un loyer mensuel de 2245 frs, une allocation logement mensuelle de 100 frs et des frais mensuels de garde-meubles de 500 frs.\nQuel est le montant mensuel total du loyer pris en charge ?",
+    # "Quel est le montant du forfait d'entretien pour 1 personne étudiant en haute école ?",
+    # "Quel est le montant du forfait d'entretien pour 1 personne suivant une formation dans le but d'obtenir le brevet fédéral ?",
+    # "Quelle est la franchise sur le revenu pour 1 personne ayant un salaire de 2384.- frs ?",
+    # "Quelle est le revenu à prendre en compte pour 1 personne ayant un revenu de 2384.- frs ?",
+    # "Quelle est le revenu à prendre en compte pour 1 personne ayant un revenu de 250.- frs ?",
+    # "Quelle est la durée d'aide financière maximale pour les indépendants ?",
+    # "De combien de temps peut être prolongée la durée d'aide financière pour les indépendants ayant un certificat médical ?",
+    # "Soit un dossier avec une seule personne bénéficiaire qui est majeure.\nQuelle est la franchise d'apprentissage à appliquer pour cette personne ?",
+    # "Quel est le montant du forfait pour dépenses personnelles des personnes hiospitalisées en clinique ou à l'hopital ?",
+    # # "Entre le nouveau règlement RASLP et l'ancien règlement RIASI, quel est le changement en ce qui concerne les frais liés à une activité non rémunérée ?",
+    # "Quel est le taux de réduction du forfait d'entretien à appliquer en cas de faute grave ?",
+    # # "Résume moi la LASLP",
+    # # "Que signifie LASLP ?",
+    # # "Que signifie RASLP ?",
+    # "Quel est le loyer maximum pris en charge pour une personne ?",
+    # "Quel est le loyer maximum pris en charge pour une famille composée d'une personne sans enfants à charge ?",
+    # "Quel est le loyer maximum pris en charge pour une famille de 5 personnes ?",
+    # "Le salaire d'apprentissage d'un enfant de 17 ans est de 2000 frs.\nQuelle est la franchise à appliquer sur ce salaire ?",
+    # "Le salaire d'apprentissage d'un enfant de 17 ans en 1ère année est de 1000 frs.\nQuelle est la franchise à appliquer sur ce salaire ?",
+    # "Le salaire d'apprentissage d'un enfant de 27 ans en 1ère année est de 2000 frs.\nQuelle est la franchise à appliquer sur ce salaire ?",
+    # "Le salaire d'apprentissage d'un enfant de 17 ans en 1ère année est de 2000 frs.\nQuelle est la franchise à appliquer sur ce salaire ?",
+    # "Le salaire d'apprentissage d'un enfant de 22 ans en 4ème année est de 1000 frs.\nQuelle est la franchise à appliquer sur ce salaire ?",
+    # "Le groupe familial est composé de 2 enfants en apprentissage, chacun en 3ème année.\nLes 2 enfants ont 19 ans et touchent chacun un salaire de 500 frs.\nQuelle est la franchise globale ?",
+    # "Le groupe familial est composé de 2 enfants en apprentissage, chacun en 3ème année.\nLes 2 enfants ont 19 ans et touchent chacun un salaire de 800 frs.\nQuelle est la franchise globale ?"
 ]
 
 LOG_DIR = Path("data/gen_results")
@@ -33,7 +70,7 @@ def clean_reasoning(text: str) -> str:
     cleaned = re.sub(r"<think>.*?</think>", "", text, flags=re.DOTALL)
     return cleaned.strip()
 
-def fetch_full_section(client, collection_name, hierarchy_path):
+def fetch_full_section_qdrant(client, collection_name, hierarchy_path):
     """
     Retrieves ALL chunks that share the specific hierarchy_path
     and merges them back into one complete text block.
@@ -71,6 +108,38 @@ def fetch_full_section(client, collection_name, hierarchy_path):
     
     return full_text
 
+
+def fetch_full_section(pg_backend, table_name, hierarchy_path):
+    """
+    Retrieves ALL chunks that share the specific hierarchy_path from Postgres.
+    """
+    if not hierarchy_path:
+        return None
+
+    # Query to find all chunks with the matching hierarchy_path in the JSONB metadata
+    query_sql = f"""
+        SELECT content, (metadata->>'chunk_index')::int as idx
+        FROM {table_name}
+        WHERE metadata->>'hierarchy_path' = %s
+        ORDER BY idx ASC;
+    """
+    
+    try:
+        # Use the existing connection from your PostgresVectorDB instance
+        with pg_backend.conn.cursor() as cur:
+            cur.execute(query_sql, (hierarchy_path,))
+            rows = cur.fetchall()
+            
+            if not rows:
+                return None
+            
+            # Merge text from all parts of the section
+            full_text = "\n".join([row[0] for row in rows])
+            return full_text
+    except Exception as e:
+        print(f"   ⚠️ SQL Fetch Error: {e}")
+        return None
+
 def run_benchmark():
     print(f"\n🧪 STARTING GENERATION BENCHMARK (Model: {MODEL_NAME})")
     print(f"📊 Total Questions: {len(queries)}")
@@ -78,23 +147,29 @@ def run_benchmark():
 
     # 1. SETUP
     print("⚙️ Initializing Components...")
-    os.environ["VECTOR_DB_PROVIDER"] = "qdrant"
-    print("👉 Forcing Provider: QDRANT")
+    # os.environ["VECTOR_DB_PROVIDER"] = "qdrant"
+    # print("👉 Forcing Provider: QDRANT")
 
     try:
         # DB Client
+        # db_wrapper = VectorDBClient()
+        # qdrant_backend = db_wrapper.client
+        # raw_client = qdrant_backend.client 
+        # collection_name = qdrant_backend.collection_name
+
         db_wrapper = VectorDBClient()
-        qdrant_backend = db_wrapper.client
-        raw_client = qdrant_backend.client 
-        collection_name = qdrant_backend.collection_name
-        
+            # Access the Postgres database client directly
+        pg_backend = db_wrapper.client 
+        table_name = pg_backend.table_name
+    
         # LLM Client
         llm = ChatOllama(
             model=MODEL_NAME,
             base_url="http://localhost:11434",
             temperature=0.1,
             num_ctx=4096,
-            keep_alive="5m"
+            # keep_alive="10min"
+            timeout=120.0
         )
         print("✅ Components Ready.")
     except Exception as e:
@@ -138,7 +213,7 @@ def run_benchmark():
         q_start = time.time()
         
         # A. RETRIEVE
-        search_hits = db_wrapper.search(query_text=question, limit=5)
+        search_hits = db_wrapper.search(query_text=question, limit=3)
         
         # B. CONTEXT RE-ASSEMBLY
         processed_paths = set()
@@ -166,7 +241,7 @@ def run_benchmark():
                 
                 if path:
                     # Fetch Siblings (Full Section)
-                    full_section_text = fetch_full_section(raw_client, collection_name, path)
+                    full_section_text = fetch_full_section(pg_backend, table_name, path)
                     if full_section_text:
                         block_text = f"SOURCE: {src} (SECTION: {path})\n{full_section_text}"
                         processed_paths.add(path)
@@ -185,6 +260,7 @@ def run_benchmark():
                 final_answer = "I don't know (No documents found)."
                 raw_response = ""
             else:
+                print(len(context_text))
                 raw_response = chain.invoke({"context": context_text, "question": question})
                 final_answer = clean_reasoning(raw_response)
                 print(f"   ✅ Answered in {time.time() - q_start:.2f}s")

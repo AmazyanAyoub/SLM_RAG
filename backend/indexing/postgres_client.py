@@ -22,7 +22,7 @@ class PostgresVectorDB:
 
         self.host = settings.retrieval.postgres_host
         self.user = settings.retrieval.postgres_user
-        self.password = settings.retrieval.postgres_password or "mysecretpassword"
+        self.password = settings.retrieval.postgres_password or "1234"
         self.dbname = settings.retrieval.postgres_db
         self.port = str(settings.retrieval.postgres_port)
         

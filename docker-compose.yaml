@@ -1,7 +1,4 @@
-version: '3.8'
-
 services:
-  # --- YOUR EXISTING QDRANT SERVICE ---
   qdrant:
     image: qdrant/qdrant:latest
     container_name: slm_rag_qdrant
@@ -10,11 +7,11 @@ services:
       - "6334:6334"
     environment:
       - QDRANT__SERVICE__API_KEY=my_secret_api_key_2025
+      - QDRANT__SERVICE__HOST=0.0.0.0
     volumes:
-      - ./data/qdrant_storage:/qdrant/storage:z
+      - qdrant_data:/qdrant/storage  # <--- Using the named volume
     restart: always
 
-  # --- NEW OLLAMA SERVICE (GPU ENABLED) ---
   ollama:
     container_name: ollama
     image: ollama/ollama:latest
@@ -31,6 +28,7 @@ services:
               count: all
               capabilities: [gpu]
 
-# --- VOLUMES SECTION ---
+# --- YOU MUST ADD qdrant_data HERE ---
 volumes:
   ollama_storage:
+  qdrant_data:      # <--- ADD THIS LINE (empty dict is fine)

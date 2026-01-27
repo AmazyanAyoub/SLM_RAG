@@ -74,6 +74,7 @@ async def main():
             continue
 
         print(f"   ✂️ Generated {len(chunks)} chunks.")
+        enricher = None
 
         # B. ENRICH
         if enricher and chunks:
@@ -87,16 +88,16 @@ async def main():
                 tasks.append(enricher.enrich_chunk(chunk["text"], neighbor_text))
             
             # Batch execution
-{
-"text":"3 La mesure est également ouverte aux personnes n'ayant pas fait de stage d'évaluation ou qui ne sont pas suivies par le service de réinsertion professionnelle. 4 Le projet de formation, élaboré dans le cadre du contrat d'aide sociale individuel, tient compte des aptitudes du bénéficiaire et des débouchés offerts par le marché de l'emploi. Il est examiné par une commission d'attribution désignée par l'Hospice général qui se prononce sur sa pertinence et son adéquation socioéconomique, ainsi que sur l'octroi et le montant de l'allocation. 5 La décision est notifiée par l'Hospice général qui est lié par l'avis de la commission d'attribution ainsi que par les montants déterminés par celle-ci."
-"metadata":{
-"source":"LIASI - Règlement d'application - 19-06-2007 - 31-12-2024.pdf"
-"hierarchy_path":"Chapitre V (7) Insertion professionnelle / Section 3 (7) Lien avec les mesures cantonales en matière de chômage / Art. 23F (18) Formation de base de courte durée"
-"chunk_index":86
-"total_chunks":126
-}
-"search_content":"3 La mesure est également ouverte aux personnes n'ayant pas fait de stage d'évaluation ou qui ne sont pas suivies par le service de réinsertion professionnelle. 4 Le projet de formation, élaboré dans le cadre du contrat d'aide sociale individuel, tient compte des aptitudes du bénéficiaire et des débouchés offerts par le marché de l'emploi. Il est examiné par une commission d'attribution désignée par l'Hospice général qui se prononce sur sa pertinence et son adéquation socioéconomique, ainsi que sur l'octroi et le montant de l'allocation. 5 La décision est notifiée par l'Hospice général qui est lié par l'avis de la commission d'attribution ainsi que par les montants déterminés par celle-ci."
-"display_content":"3 La mesure est également ouverte aux personnes n'ayant pas fait de stage d'évaluation ou qui ne sont pas suivies par le service de réinsertion professionnelle. 4 Le projet de formation, élaboré dans le cadre du contrat d'aide sociale individuel, tient compte des aptitudes du bénéficiaire et des débouchés offerts par le marché de l'emploi. Il est examiné par une commission d'attribution désignée par l'Hospice général qui se prononce sur sa pertinence et son adéquation socioéconomique, ainsi que sur l'octroi et le montant de l'allocation. 5 La décision est notifiée par l'Hospice général qui est lié par l'avis de la commission d'attribution ainsi que par les montants déterminés par celle-ci."
+# {
+# "text":"3 La mesure est également ouverte aux personnes n'ayant pas fait de stage d'évaluation ou qui ne sont pas suivies par le service de réinsertion professionnelle. 4 Le projet de formation, élaboré dans le cadre du contrat d'aide sociale individuel, tient compte des aptitudes du bénéficiaire et des débouchés offerts par le marché de l'emploi. Il est examiné par une commission d'attribution désignée par l'Hospice général qui se prononce sur sa pertinence et son adéquation socioéconomique, ainsi que sur l'octroi et le montant de l'allocation. 5 La décision est notifiée par l'Hospice général qui est lié par l'avis de la commission d'attribution ainsi que par les montants déterminés par celle-ci."
+# "metadata":{
+# "source":"LIASI - Règlement d'application - 19-06-2007 - 31-12-2024.pdf"
+# "hierarchy_path":"Chapitre V (7) Insertion professionnelle / Section 3 (7) Lien avec les mesures cantonales en matière de chômage / Art. 23F (18) Formation de base de courte durée"
+# "chunk_index":86
+# "total_chunks":126
+# }
+# "search_content":"3 La mesure est également ouverte aux personnes n'ayant pas fait de stage d'évaluation ou qui ne sont pas suivies par le service de réinsertion professionnelle. 4 Le projet de formation, élaboré dans le cadre du contrat d'aide sociale individuel, tient compte des aptitudes du bénéficiaire et des débouchés offerts par le marché de l'emploi. Il est examiné par une commission d'attribution désignée par l'Hospice général qui se prononce sur sa pertinence et son adéquation socioéconomique, ainsi que sur l'octroi et le montant de l'allocation. 5 La décision est notifiée par l'Hospice général qui est lié par l'avis de la commission d'attribution ainsi que par les montants déterminés par celle-ci."
+# "display_content":"3 La mesure est également ouverte aux personnes n'ayant pas fait de stage d'évaluation ou qui ne sont pas suivies par le service de réinsertion professionnelle. 4 Le projet de formation, élaboré dans le cadre du contrat d'aide sociale individuel, tient compte des aptitudes du bénéficiaire et des débouchés offerts par le marché de l'emploi. Il est examiné par une commission d'attribution désignée par l'Hospice général qui se prononce sur sa pertinence et son adéquation socioéconomique, ainsi que sur l'octroi et le montant de l'allocation. 5 La décision est notifiée par l'Hospice général qui est lié par l'avis de la commission d'attribution ainsi que par les montants déterminés par celle-ci."
 
         # C. INDEX
         if chunks:

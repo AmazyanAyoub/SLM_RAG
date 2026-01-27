@@ -8,7 +8,7 @@ class VectorDBClient:
         Factory Class: Initializes either Qdrant or Postgres based on configuration.
         """
         # Check environment variable or settings for provider
-        self.provider = os.getenv("VECTOR_DB_PROVIDER", "qdrant").lower()
+        self.provider = os.getenv("VECTOR_DB_PROVIDER", "postgres").lower()
         print(f"🚀 Initializing Vector DB Provider: {self.provider.upper()}")
         
         if self.provider == "postgres":
